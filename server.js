@@ -15,7 +15,9 @@ let data = {
   users: [],
   menu_items: [],
   orders: [],
-  otp_store: {} // For phone OTP storage
+  otp_store: {},
+  chats: [],
+  complaints: []
 };
 
 // Load existing data or create defaults
@@ -27,10 +29,10 @@ if (fs.existsSync(DATA_FILE)) {
   }
 }
 
-// Ensure otp_store exists
-if (!data.otp_store) {
-  data.otp_store = {};
-}
+// Ensure all required fields exist
+if (!data.otp_store) data.otp_store = {};
+if (!data.chats) data.chats = [];
+if (!data.complaints) data.complaints = [];
 
 // Save data to file
 function saveData() {
@@ -44,8 +46,6 @@ function generateOTP() {
 
 // Send OTP (simulated - in production use Twilio)
 function sendOTP(phone, otp) {
-  // In production, integrate with Twilio or other SMS service
-  // For now, we'll log the OTP (in production, remove this)
   console.log(`OTP for ${phone}: ${otp}`);
   return true;
 }
@@ -53,9 +53,9 @@ function sendOTP(phone, otp) {
 // Initialize default data if empty
 if (data.users.length === 0) {
   data.users = [
-    { id: 1, username: 'owner', password: bcrypt.hashSync('owner123', 10), role: 'owner', name: 'Restaurant Owner', phone: '+91 98765 43210', auth_provider: 'email' },
-    { id: 2, username: 'agent1', password: bcrypt.hashSync('agent123', 10), role: 'agent', name: 'Delivery Agent 1', phone: '9876543210', auth_provider: 'email' },
-    { id: 3, username: 'agent2', password: bcrypt.hashSync('agent123', 10), role: 'agent', name: 'Delivery Agent 2', phone: '9876543211', auth_provider: 'email' }
+    { id: 1, username: 'owner', password: bcrypt.hashSync('owner123', 10), role: 'owner', name: 'Restaurant Owner', phone: '+919876543210', email: 'owner@payalbiryani.com', auth_provider: 'email' },
+    { id: 2, username: 'agent1', password: bcrypt.hashSync('agent123', 10), role: 'agent', name: 'Delivery Agent 1', phone: '9876543210', email: 'agent1@payalbiryani.com', auth_provider: 'email' },
+    { id: 3, username: 'agent2', password: bcrypt.hashSync('agent123', 10), role: 'agent', name: 'Delivery Agent 2', phone: '9876543211', email: 'agent2@payalbiryani.com', auth_provider: 'email' }
   ];
   saveData();
 }
@@ -106,18 +106,32 @@ const requireRole = (roles) => {
   };
 };
 
-// API Routes
+// ==================== AUTH ROUTES ====================
 
-// Login with username/password (existing)
+// Login with username/password
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
+  
+  if (!username || !password) {
+    return res.json({ success: false, message: 'Username and password required' });
+  }
+  
   const user = data.users.find(u => u.username === username);
   
   if (!user || !bcrypt.compareSync(password, user.password)) {
     return res.json({ success: false, message: 'Invalid credentials' });
   }
   
-  req.session.user = { id: user.id, username: user.username, role: user.role, name: user.name, auth_provider: user.auth_provider };
+  req.session.user = { 
+    id: user.id, 
+    username: user.username, 
+    role: user.role, 
+    name: user.name, 
+    auth_provider: user.auth_provider,
+    phone: user.phone,
+    email: user.email
+  };
+  
   res.json({ success: true, user: req.session.user });
 });
 
@@ -125,8 +139,7 @@ app.post('/api/login', (req, res) => {
 app.post('/api/auth/google', (req, res) => {
   const { googleToken, name, email, googleId } = req.body;
   
-  // In production, verify the Google token with Google OAuth2
-  // For now, we'll accept the token and create/update user
+  console.log('Google Sign-In attempt:', { googleId, email, name });
   
   // Check if user exists with this Google ID
   let user = data.users.find(u => u.google_id === googleId && u.auth_provider === 'google');
@@ -143,16 +156,17 @@ app.post('/api/auth/google', (req, res) => {
       // Create new user
       user = {
         id: Date.now(),
-        username: email.split('@')[0] + '_' + Date.now(),
+        username: email.split('@')[0].toLowerCase() + '_' + Date.now().toString().slice(-4),
         name: name || email.split('@')[0],
         email: email,
         google_id: googleId,
         phone: '',
         role: 'customer',
         auth_provider: 'google',
-        password: '' // No password for Google users
+        password: ''
       };
       data.users.push(user);
+      console.log('Created new Google user:', user.username);
     }
     saveData();
   }
@@ -163,7 +177,8 @@ app.post('/api/auth/google', (req, res) => {
     role: user.role, 
     name: user.name,
     auth_provider: user.auth_provider,
-    email: user.email
+    email: user.email,
+    phone: user.phone
   };
   
   res.json({ success: true, user: req.session.user });
@@ -172,6 +187,8 @@ app.post('/api/auth/google', (req, res) => {
 // Phone OTP - Send OTP
 app.post('/api/auth/phone/send-otp', (req, res) => {
   const { phone } = req.body;
+  
+  console.log('OTP request for phone:', phone);
   
   if (!phone || phone.length < 10) {
     return res.json({ success: false, message: 'Invalid phone number' });
@@ -192,17 +209,21 @@ app.post('/api/auth/phone/send-otp', (req, res) => {
   // Send OTP (simulated)
   sendOTP(phone, otp);
   
+  console.log('OTP generated:', otp, 'for phone:', phone);
+  
+  // Always return OTP for development
   res.json({ 
     success: true, 
     message: 'OTP sent successfully',
-    // In development, return OTP for testing (remove in production)
     dev_otp: otp 
   });
 });
 
 // Phone OTP - Verify OTP and Login/Signup
 app.post('/api/auth/phone/verify', (req, res) => {
-  const { phone, otp, name } = req.body;
+  const { phone, otp } = req.body;
+  
+  console.log('OTP verify attempt for phone:', phone, 'OTP:', otp);
   
   if (!phone || !otp) {
     return res.json({ success: false, message: 'Phone number and OTP required' });
@@ -233,25 +254,23 @@ app.post('/api/auth/phone/verify', (req, res) => {
   }
   
   // OTP verified - Create or update user
-  let user = data.users.find(u => u.phone === phone && u.auth_provider === 'phone');
+  let user = data.users.find(u => u.phone === phone);
   
   if (!user) {
     // Create new user
     user = {
       id: Date.now(),
-      username: 'user_' + phone.slice(-4),
-      name: name || 'Customer',
+      username: 'user_' + phone.slice(-4) + '_' + Date.now().toString().slice(-4),
+      name: 'Customer',
       phone: phone,
       email: '',
       google_id: '',
       role: 'customer',
       auth_provider: 'phone',
-      password: '' // No password for phone users
+      password: ''
     };
     data.users.push(user);
-  } else {
-    // Update user info
-    user.name = name || user.name;
+    console.log('Created new phone user:', user.username);
   }
   
   saveData();
@@ -267,52 +286,11 @@ app.post('/api/auth/phone/verify', (req, res) => {
     role: user.role, 
     name: user.name,
     auth_provider: user.auth_provider,
-    phone: user.phone
+    phone: user.phone,
+    email: user.email
   };
   
-  res.json({ success: true, user: req.session.user });
-});
-
-// Phone signup with password (alternative flow)
-app.post('/api/auth/phone/signup', (req, res) => {
-  const { phone, password, name } = req.body;
-  
-  if (!phone || !password) {
-    return res.json({ success: false, message: 'Phone and password required' });
-  }
-  
-  // Check if user exists
-  const existingUser = data.users.find(u => u.phone === phone);
-  
-  if (existingUser) {
-    return res.json({ success: false, message: 'Phone number already registered' });
-  }
-  
-  // Create new user
-  const newUser = {
-    id: Date.now(),
-    username: 'user_' + phone.slice(-4),
-    name: name || 'Customer',
-    phone: phone,
-    email: '',
-    google_id: '',
-    role: 'customer',
-    auth_provider: 'phone_password',
-    password: bcrypt.hashSync(password, 10)
-  };
-  
-  data.users.push(newUser);
-  saveData();
-  
-  req.session.user = { 
-    id: newUser.id, 
-    username: newUser.username, 
-    role: newUser.role, 
-    name: newUser.name,
-    auth_provider: newUser.auth_provider,
-    phone: newUser.phone
-  };
-  
+  console.log('Phone login success for user:', user.username);
   res.json({ success: true, user: req.session.user });
 });
 
@@ -324,7 +302,7 @@ app.post('/api/auth/phone/login', (req, res) => {
     return res.json({ success: false, message: 'Phone and password required' });
   }
   
-  const user = data.users.find(u => u.phone === phone && (u.auth_provider === 'phone_password' || u.auth_provider === 'phone'));
+  const user = data.users.find(u => u.phone === phone);
   
   if (!user) {
     return res.json({ success: false, message: 'User not found. Please sign up first.' });
@@ -336,7 +314,6 @@ app.post('/api/auth/phone/login', (req, res) => {
       return res.json({ success: false, message: 'Invalid password' });
     }
   } else {
-    // For OTP-only users, they need to use OTP login
     return res.json({ success: false, message: 'Please use OTP login for this account' });
   }
   
@@ -346,7 +323,8 @@ app.post('/api/auth/phone/login', (req, res) => {
     role: user.role, 
     name: user.name,
     auth_provider: user.auth_provider,
-    phone: user.phone
+    phone: user.phone,
+    email: user.email
   };
   
   res.json({ success: true, user: req.session.user });
@@ -355,6 +333,10 @@ app.post('/api/auth/phone/login', (req, res) => {
 // Customer registration (email/password)
 app.post('/api/auth/register', (req, res) => {
   const { username, password, name, email, phone } = req.body;
+  
+  if (!username || !password || !name) {
+    return res.json({ success: false, message: 'Username, password and name are required' });
+  }
   
   // Check if username exists
   if (data.users.find(u => u.username === username)) {
@@ -375,7 +357,7 @@ app.post('/api/auth/register', (req, res) => {
     id: Date.now(),
     username,
     password: bcrypt.hashSync(password, 10),
-    name: name || username,
+    name,
     email: email || '',
     phone: phone || '',
     google_id: '',
@@ -386,12 +368,16 @@ app.post('/api/auth/register', (req, res) => {
   data.users.push(newUser);
   saveData();
   
+  console.log('New user registered:', username);
+  
   req.session.user = { 
     id: newUser.id, 
     username: newUser.username, 
     role: newUser.role, 
     name: newUser.name,
-    auth_provider: newUser.auth_provider
+    auth_provider: newUser.auth_provider,
+    email: newUser.email,
+    phone: newUser.phone
   };
   
   res.json({ success: true, user: req.session.user });
@@ -407,6 +393,209 @@ app.post('/api/logout', (req, res) => {
 app.get('/api/user', (req, res) => {
   res.json({ user: req.session.user || null });
 });
+
+// ==================== CUSTOMER ROUTES ====================
+
+// Get customer profile
+app.get('/api/customer/profile', requireAuth, (req, res) => {
+  const user = data.users.find(u => u.id === req.session.user.id);
+  if (user) {
+    const { password, ...userWithoutPassword } = user;
+    res.json({ success: true, user: userWithoutPassword });
+  } else {
+    res.json({ success: false, message: 'User not found' });
+  }
+});
+
+// Update customer profile
+app.put('/api/customer/profile', requireAuth, (req, res) => {
+  const { name, email, phone, address } = req.body;
+  const userIndex = data.users.findIndex(u => u.id === req.session.user.id);
+  
+  if (userIndex === -1) {
+    return res.json({ success: false, message: 'User not found' });
+  }
+  
+  if (name) data.users[userIndex].name = name;
+  if (email) data.users[userIndex].email = email;
+  if (phone) data.users[userIndex].phone = phone;
+  if (address) data.users[userIndex].address = address;
+  
+  saveData();
+  
+  req.session.user = { ...req.session.user, ...data.users[userIndex] };
+  
+  res.json({ success: true, message: 'Profile updated' });
+});
+
+// Get customer order history
+app.get('/api/customer/orders', requireAuth, (req, res) => {
+  const userId = req.session.user.id;
+  const user = data.users.find(u => u.id === userId);
+  
+  // Get orders by phone or user ID
+  const orders = data.orders
+    .filter(o => o.customer_phone === user.phone || o.customer_id === userId)
+    .map(o => {
+      const agent = data.users.find(u => u.id === o.delivery_agent_id);
+      const complaint = data.complaints.find(c => c.order_id === o.id);
+      return { 
+        ...o, 
+        agent_name: agent ? agent.name : null,
+        agent_phone: agent ? agent.phone : null,
+        has_complaint: !!complaint,
+        complaint_status: complaint ? complaint.status : null
+      };
+    })
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  
+  res.json({ success: true, orders });
+});
+
+// Track specific order
+app.get('/api/customer/track/:id', requireAuth, (req, res) => {
+  const userId = req.session.user.id;
+  const user = data.users.find(u => u.id === userId);
+  const orderId = parseInt(req.params.id);
+  
+  const order = data.orders.find(o => o.id === orderId && (o.customer_phone === user.phone || o.customer_id === userId));
+  
+  if (!order) {
+    return res.json({ success: false, message: 'Order not found' });
+  }
+  
+  const agent = order.delivery_agent_id ? data.users.find(u => u.id === order.delivery_agent_id) : null;
+  const complaint = data.complaints.find(c => c.order_id === order.id);
+  
+  res.json({ 
+    success: true, 
+    order: { 
+      ...order, 
+      agent_name: agent ? agent.name : null,
+      agent_phone: agent ? agent.phone : null,
+      complaint: complaint || null
+    }
+  });
+});
+
+// Raise complaint
+app.post('/api/customer/complaint', requireAuth, (req, res) => {
+  const { order_id, subject, message } = req.body;
+  const userId = req.session.user.id;
+  const user = data.users.find(u => u.id === userId);
+  
+  if (!order_id || !subject || !message) {
+    return res.json({ success: false, message: 'Order ID, subject and message are required' });
+  }
+  
+  // Verify order belongs to user
+  const order = data.orders.find(o => o.id === order_id && (o.customer_phone === user.phone || o.customer_id === userId));
+  
+  if (!order) {
+    return res.json({ success: false, message: 'Order not found' });
+  }
+  
+  const complaint = {
+    id: Date.now(),
+    order_id: parseInt(order_id),
+    customer_id: userId,
+    customer_name: user.name,
+    customer_phone: user.phone,
+    subject,
+    message,
+    status: 'pending', // pending, resolved
+    created_at: new Date().toISOString(),
+    response: ''
+  };
+  
+  data.complaints.push(complaint);
+  saveData();
+  
+  res.json({ success: true, message: 'Complaint submitted successfully', complaint_id: complaint.id });
+});
+
+// Get complaints for an order
+app.get('/api/customer/complaints/:orderId', requireAuth, (req, res) => {
+  const userId = req.session.user.id;
+  const orderId = parseInt(req.params.orderId);
+  
+  const complaints = data.complaints.filter(c => c.order_id === orderId && c.customer_id === userId);
+  
+  res.json({ success: true, complaints });
+});
+
+// ==================== CHAT ROUTES ====================
+
+// Get chat messages
+app.get('/api/chat/:orderId', requireAuth, (req, res) => {
+  const orderId = parseInt(req.params.orderId);
+  const userId = req.session.user.id;
+  const userRole = req.session.user.role;
+  
+  // Verify user has access to this order
+  const order = data.orders.find(o => o.id === orderId);
+  if (!order) {
+    return res.json({ success: false, message: 'Order not found' });
+  }
+  
+  // Get messages for this order
+  const messages = data.chats
+    .filter(c => c.order_id === orderId)
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  
+  res.json({ success: true, messages });
+});
+
+// Send chat message
+app.post('/api/chat/:orderId', requireAuth, (req, res) => {
+  const orderId = parseInt(req.params.orderId);
+  const { message, to_role } = req.body;
+  const userId = req.session.user.id;
+  const user = data.users.find(u => u.id === userId);
+  
+  if (!message) {
+    return res.json({ success: false, message: 'Message is required' });
+  }
+  
+  // Verify order exists
+  const order = data.orders.find(o => o.id === orderId);
+  if (!order) {
+    return res.json({ success: false, message: 'Order not found' });
+  }
+  
+  // Determine who can chat with whom
+  let canSend = false;
+  if (userRole === 'customer') {
+    canSend = order.customer_phone === user.phone || order.customer_id === userId;
+  } else if (userRole === 'owner') {
+    canSend = true; // Owner can chat on any order
+  } else if (userRole === 'agent') {
+    canSend = order.delivery_agent_id === userId;
+  }
+  
+  if (!canSend) {
+    return res.json({ success: false, message: 'You cannot chat on this order' });
+  }
+  
+  const chat = {
+    id: Date.now(),
+    order_id: orderId,
+    user_id: userId,
+    user_name: user.name,
+    user_role: userRole,
+    message,
+    to_role: to_role || 'all', // customer, owner, agent
+    created_at: new Date().toISOString(),
+    read: false
+  };
+  
+  data.chats.push(chat);
+  saveData();
+  
+  res.json({ success: true, message: 'Message sent', chat });
+});
+
+// ==================== ORDER ROUTES ====================
 
 // Get menu items (public)
 app.get('/api/menu', (req, res) => {
@@ -456,16 +645,52 @@ app.get('/api/admin/orders', requireAuth, requireRole(['owner']), (req, res) => 
   const orders = data.orders
     .map(o => {
       const agent = data.users.find(u => u.id === o.delivery_agent_id);
-      return { ...o, agent_name: agent ? agent.name : null };
+      const complaint = data.complaints.find(c => c.order_id === o.id);
+      return { 
+        ...o, 
+        agent_name: agent ? agent.name : null,
+        agent_phone: agent ? agent.phone : null,
+        has_complaint: !!complaint,
+        complaint_status: complaint ? complaint.status : null
+      };
     })
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   res.json(orders);
 });
 
+// Update order status (owner) - Extended status flow
+app.post('/api/admin/order/:id/status', requireAuth, requireRole(['owner']), (req, res) => {
+  const { status, note } = req.body;
+  const idx = data.orders.findIndex(o => o.id == req.params.id);
+  
+  const validStatuses = ['pending', 'received', 'preparing', 'cooked', 'out_for_delivery', 'delivered', 'cancelled'];
+  
+  if (!validStatuses.includes(status)) {
+    return res.json({ success: false, message: 'Invalid status' });
+  }
+  
+  if (idx !== -1) {
+    const oldStatus = data.orders[idx].order_status;
+    data.orders[idx].order_status = status;
+    data.orders[idx].status_note = note || '';
+    data.orders[idx].status_updated_at = new Date().toISOString();
+    data.orders[idx].status_history = data.orders[idx].status_history || [];
+    data.orders[idx].status_history.push({
+      status,
+      note: note || '',
+      updated_at: new Date().toISOString(),
+      updated_by: req.session.user.name
+    });
+    saveData();
+    console.log(`Order ${data.orders[idx].id} status changed from ${oldStatus} to ${status}`);
+  }
+  res.json({ success: true });
+});
+
 // Get delivery agent orders
 app.get('/api/agent/orders', requireAuth, requireRole(['agent']), (req, res) => {
   const orders = data.orders
-    .filter(o => o.delivery_agent_id === req.session.user.id || (!o.delivery_agent_id && o.order_status === 'accepted'))
+    .filter(o => o.delivery_agent_id === req.session.user.id || (!o.delivery_agent_id && o.order_status === 'cooked'))
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   res.json(orders);
 });
@@ -475,7 +700,8 @@ app.post('/api/agent/accept/:id', requireAuth, requireRole(['agent']), (req, res
   const idx = data.orders.findIndex(o => o.id == req.params.id);
   if (idx !== -1) {
     data.orders[idx].delivery_agent_id = req.session.user.id;
-    data.orders[idx].order_status = 'accepted';
+    data.orders[idx].order_status = 'out_for_delivery';
+    data.orders[idx].status_updated_at = new Date().toISOString();
     saveData();
   }
   res.json({ success: true });
@@ -488,6 +714,7 @@ app.post('/api/agent/update/:id', requireAuth, requireRole(['agent', 'owner']), 
   if (idx !== -1) {
     data.orders[idx].order_status = status;
     data.orders[idx].status_note = note || '';
+    data.orders[idx].status_updated_at = new Date().toISOString();
     saveData();
   }
   res.json({ success: true });
@@ -495,39 +722,134 @@ app.post('/api/agent/update/:id', requireAuth, requireRole(['agent', 'owner']), 
 
 // Place order (customer)
 app.post('/api/orders', (req, res) => {
-  const { customer_name, customer_phone, customer_address, items, total_amount, payment_method } = req.body;
+  const { customer_name, customer_phone, customer_address, items, total_amount, payment_method, customer_id, notes } = req.body;
+  
+  if (!customer_name || !customer_phone || !items || !total_amount) {
+    return res.json({ success: false, message: 'Missing required fields' });
+  }
+  
   const newOrder = {
     id: Date.now(),
+    customer_id: customer_id || null,
     customer_name,
     customer_phone,
-    customer_address,
+    customer_address: customer_address || '',
     items,
     total_amount,
-    payment_method,
+    payment_method: payment_method || 'COD',
     payment_status: 'pending',
     order_status: 'pending',
     delivery_agent_id: null,
-    status_note: '',
-    created_at: new Date().toISOString()
+    status_note: notes || '',
+    notes: notes || '',
+    created_at: new Date().toISOString(),
+    status_history: [{
+      status: 'pending',
+      note: 'Order placed',
+      updated_at: new Date().toISOString(),
+      updated_by: 'System'
+    }]
   };
+  
   data.orders.push(newOrder);
   saveData();
-  res.json({ success: true, order_id: newOrder.id });
+  
+  console.log('New order placed:', newOrder.id, 'by', customer_name);
+  
+  res.json({ success: true, order_id: newOrder.id, order: newOrder });
 });
 
-// Track order (customer)
+// Track order (customer - public)
 app.get('/api/track/:id', (req, res) => {
   const order = data.orders.find(o => o.id == req.params.id);
-  res.json(order || null);
+  if (order) {
+    const agent = order.delivery_agent_id ? data.users.find(u => u.id === order.delivery_agent_id) : null;
+    res.json({ 
+      success: true, 
+      order: {
+        ...order,
+        agent_name: agent ? agent.name : null,
+        agent_phone: agent ? agent.phone : null
+      }
+    });
+  } else {
+    res.json({ success: false, message: 'Order not found' });
+  }
+});
+
+// ==================== COMPLAINT ROUTES (Owner) ====================
+
+// Get all complaints (owner)
+app.get('/api/admin/complaints', requireAuth, requireRole(['owner']), (req, res) => {
+  const complaints = data.complaints
+    .map(c => {
+      const order = data.orders.find(o => o.id === c.order_id);
+      return { ...c, order };
+    })
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  res.json(complaints);
+});
+
+// Respond to complaint (owner)
+app.post('/api/admin/complaint/:id/respond', requireAuth, requireRole(['owner']), (req, res) => {
+  const { response } = req.body;
+  const idx = data.complaints.findIndex(c => c.id == req.params.id);
+  
+  if (idx !== -1) {
+    data.complaints[idx].response = response;
+    data.complaints[idx].status = 'resolved';
+    data.complaints[idx].responded_at = new Date().toISOString();
+    data.complaints[idx].responded_by = req.session.user.name;
+    saveData();
+  }
+  
+  res.json({ success: true });
+});
+
+// ==================== STATS ROUTES (Owner) ====================
+
+// Get dashboard stats (owner)
+app.get('/api/admin/stats', requireAuth, requireRole(['owner']), (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  
+  const totalOrders = data.orders.length;
+  const todayOrders = data.orders.filter(o => o.created_at.startsWith(today)).length;
+  const pendingOrders = data.orders.filter(o => o.order_status === 'pending' || o.order_status === 'received').length;
+  const totalRevenue = data.orders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+  const todayRevenue = data.orders
+    .filter(o => o.created_at.startsWith(today))
+    .reduce((sum, o) => sum + (o.total_amount || 0), 0);
+  const totalCustomers = data.users.filter(u => u.role === 'customer').length;
+  const totalAgents = data.users.filter(u => u.role === 'agent').length;
+  const pendingComplaints = data.complaints.filter(c => c.status === 'pending').length;
+  
+  res.json({
+    success: true,
+    stats: {
+      totalOrders,
+      todayOrders,
+      pendingOrders,
+      totalRevenue,
+      todayRevenue,
+      totalCustomers,
+      totalAgents,
+      pendingComplaints
+    }
+  });
 });
 
 // Get restaurant info
 app.get('/api/info', (req, res) => {
   const owner = data.users.find(u => u.role === 'owner');
-  res.json({ phone: owner?.phone || '+91 98765 43210', name: owner?.name || 'Payal Biryani' });
+  res.json({ 
+    phone: owner?.phone || '+919876543210', 
+    name: owner?.name || 'Payal Biryani',
+    email: owner?.email || 'info@payalbiryani.com'
+  });
 });
 
-// Serve frontend
+// ==================== PAGE ROUTES ====================
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -542,6 +864,10 @@ app.get('/owner', (req, res) => {
 
 app.get('/agent', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'agent.html'));
+});
+
+app.get('/customer', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'customer.html'));
 });
 
 app.listen(PORT, () => {

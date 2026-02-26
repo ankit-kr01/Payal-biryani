@@ -6,7 +6,7 @@
     <title>Login - Payal Biryani</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+    <meta name="google-signin-client_id" content="700003205623-emipu95h936qtnp5tbhr6q0f5ias14jj.apps.googleusercontent.com">
     <style>
         :root {
             --primary-red: #D32F2F;
@@ -56,7 +56,6 @@
         .logo h1 span { color: var(--primary-red); }
         .logo p { color: #757575; font-size: 0.9rem; }
         
-        /* Tab Navigation */
         .auth-tabs {
             display: flex;
             gap: 5px;
@@ -83,7 +82,6 @@
             box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3);
         }
         
-        /* Form Sections */
         .auth-section { display: none; }
         .auth-section.active { display: block; }
         
@@ -123,7 +121,6 @@
             border-radius: 0 12px 12px 0;
         }
         
-        /* Buttons */
         .login-btn {
             width: 100%;
             padding: 15px;
@@ -143,59 +140,6 @@
             cursor: not-allowed;
         }
         
-        /* Social Login */
-        .social-divider {
-            display: flex;
-            align-items: center;
-            margin: 25px 0;
-        }
-        .social-divider::before,
-        .social-divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: #E0E0E0;
-        }
-        .social-divider span {
-            padding: 0 15px;
-            color: #757575;
-            font-size: 0.85rem;
-        }
-        
-        .social-btn {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid #E0E0E0;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 12px;
-            font-family: 'Poppins', sans-serif;
-        }
-        .social-btn.google {
-            background: white;
-            color: #333;
-        }
-        .social-btn.google:hover {
-            background: #f5f5f5;
-            border-color: #ddd;
-        }
-        .social-btn.phone {
-            background: var(--primary-yellow);
-            color: #212121;
-            border-color: var(--primary-yellow);
-        }
-        .social-btn.phone:hover {
-            background: #ffb300;
-        }
-        
-        /* OTP Verification */
         .otp-inputs {
             display: flex;
             gap: 10px;
@@ -214,6 +158,26 @@
         .otp-inputs input:focus {
             border-color: var(--primary-yellow);
             outline: none;
+        }
+        
+        .otp-display {
+            background: #fff3e0;
+            border: 2px dashed #ff9800;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .otp-display .otp-code {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #e65100;
+            letter-spacing: 8px;
+        }
+        .otp-display .otp-label {
+            font-size: 0.85rem;
+            color: #795548;
+            margin-bottom: 10px;
         }
         
         .resend-otp {
@@ -261,27 +225,6 @@
             display: none;
         }
         
-        .user-types {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .user-type {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid #E0E0E0;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .user-type.selected {
-            border-color: var(--primary-yellow);
-            background: rgba(255, 193, 7, 0.1);
-        }
-        .user-type i { font-size: 1.5rem; margin-bottom: 5px; display: block; }
-        .user-type span { font-size: 0.85rem; }
-        
         .switch-auth {
             text-align: center;
             margin-top: 15px;
@@ -295,6 +238,17 @@
             cursor: pointer;
         }
         .switch-auth a:hover { text-decoration: underline; }
+        
+        .debug-info {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 0.8rem;
+            color: #1565c0;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -307,8 +261,8 @@
         
         <div class="error" id="error"></div>
         <div class="success" id="success"></div>
+        <div class="debug-info" id="debug-info"></div>
         
-        <!-- Auth Tabs -->
         <div class="auth-tabs">
             <button class="auth-tab active" onclick="showAuthSection('password')">
                 <i class="fas fa-envelope"></i> Email
@@ -321,7 +275,6 @@
             </button>
         </div>
         
-        <!-- Email/Password Login -->
         <div class="auth-section active" id="password-section">
             <form onsubmit="handleEmailLogin(event)">
                 <div class="form-group">
@@ -341,7 +294,6 @@
             </div>
         </div>
         
-        <!-- Phone OTP Login -->
         <div class="auth-section" id="phone-section">
             <div id="phone-login-form">
                 <form onsubmit="handleSendOTP(event)">
@@ -363,9 +315,16 @@
             </div>
             
             <div id="phone-otp-form" style="display: none;">
+                <!-- OTP Display Box - Shows OTP for testing -->
+                <div class="otp-display" id="otp-display">
+                    <div class="otp-label">Your OTP Code:</div>
+                    <div class="otp-code" id="otp-code">------</div>
+                    <div style="font-size: 0.75rem; color: #999; margin-top: 5px;">(This OTP is shown for testing)</div>
+                </div>
+                
                 <form onsubmit="handleVerifyOTP(event)">
                     <div class="form-group">
-                        <label>Enter OTP sent to your phone</label>
+                        <label>Enter OTP</label>
                         <div class="otp-inputs">
                             <input type="text" maxlength="1" class="otp-digit" oninput="handleOTPInput(this, 0)">
                             <input type="text" maxlength="1" class="otp-digit" oninput="handleOTPInput(this, 1)">
@@ -391,7 +350,6 @@
             </div>
         </div>
         
-        <!-- Phone with Password -->
         <div class="auth-section" id="phone-password-section">
             <form onsubmit="handlePhonePasswordLogin(event)">
                 <div class="form-group">
@@ -417,33 +375,34 @@
             </div>
         </div>
         
-        <!-- Google Sign-In -->
         <div class="auth-section" id="google-section">
             <p style="text-align: center; color: #757575; margin-bottom: 20px;">
                 Sign in with your Google account for quick and secure access
             </p>
-            <div class="g_id_onload"
-                 data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-                 data-context="signin"
-                 data-ux_mode="popup"
-                 data-callback="handleGoogleSignIn"
-                 data-auto_prompt="false">
+            <div id="google-btn-container">
+                <div class="g_id_onload"
+                     data-client_id="700003205623-emipu95h936qtnp5tbhr6q0f5ias14jj.apps.googleusercontent.com"
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="handleGoogleSignIn"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left"
+                     data-width="300">
+                </div>
             </div>
-            <div class="g_id_signin"
-                 data-type="standard"
-                 data-shape="rectangular"
-                 data-theme="outline"
-                 data-text="signin_with"
-                 data-size="large"
-                 data-logo_alignment="left"
-                 data-width="300">
-            </div>
+            <div id="google-error" style="display: none; color: red; text-align: center; margin-top: 10px;"></div>
             <div class="switch-auth">
                 Or <a onclick="showAuthSection('phone')">Sign in with Phone</a>
             </div>
         </div>
         
-        <!-- Registration -->
         <div class="auth-section" id="register-section">
             <form onsubmit="handleRegister(event)">
                 <div class="form-group">
@@ -483,8 +442,14 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         let currentPhone = '';
+        let currentOTP = '';
         
-        // Tab switching
+        function showDebug(msg) {
+            const debugEl = document.getElementById('debug-info');
+            debugEl.textContent = msg;
+            debugEl.style.display = 'block';
+        }
+        
         function showAuthSection(section) {
             document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.auth-section').forEach(sec => sec.classList.remove('active'));
@@ -511,45 +476,36 @@
             document.getElementById('phone-password-section').classList.add('active');
         }
         
-        // Email Login
         async function handleEmailLogin(e) {
             e.preventDefault();
             const username = document.getElementById('email-username').value;
             const password = document.getElementById('email-password').value;
             const error = document.getElementById('error');
-            const success = document.getElementById('success');
             
             error.style.display = 'none';
-            success.style.display = 'none';
             
-            // Try email login first, then username
-            let res = await fetch('/api/auth/register', {
+            if (!username || !password) {
+                error.textContent = 'Please enter username and password';
+                error.style.display = 'block';
+                return;
+            }
+            
+            let res = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: username, password: password })
+                body: JSON.stringify({ username, password })
             });
-            
-            // If not registered as email, try username login
-            if (!res.ok) {
-                res = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-            }
             
             const data = await res.json();
             
             if (data.success) {
                 redirectUser(data.user);
             } else {
-                // Try registration flow - maybe they want to register
                 error.textContent = data.message || 'Login failed';
                 error.style.display = 'block';
             }
         }
         
-        // Phone OTP
         async function handleSendOTP(e) {
             e.preventDefault();
             const countryCode = document.getElementById('country-code').value;
@@ -561,8 +517,8 @@
             error.style.display = 'none';
             success.style.display = 'none';
             
-            if (phone.length < 10) {
-                error.textContent = 'Please enter a valid phone number';
+            if (!phone || phone.length < 10) {
+                error.textContent = 'Please enter a valid phone number (at least 10 digits)';
                 error.style.display = 'block';
                 return;
             }
@@ -570,6 +526,8 @@
             currentPhone = countryCode + phone;
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            
+            showDebug('Sending OTP to ' + currentPhone);
             
             try {
                 const res = await fetch('/api/auth/phone/send-otp', {
@@ -579,29 +537,33 @@
                 });
                 
                 const data = await res.json();
+                showDebug('Response: ' + JSON.stringify(data));
                 
                 if (data.success) {
                     document.getElementById('phone-login-form').style.display = 'none';
                     document.getElementById('phone-otp-form').style.display = 'block';
                     
-                    // Show OTP for development (remove in production)
+                    // Display OTP prominently for testing
                     if (data.dev_otp) {
-                        success.textContent = `OTP sent! (Dev: ${data.dev_otp})`;
-                        success.style.display = 'block';
+                        currentOTP = data.dev_otp;
+                        document.getElementById('otp-code').textContent = data.dev_otp;
+                        success.textContent = 'OTP sent! Code shown below.';
                     } else {
+                        document.getElementById('otp-code').textContent = '------';
                         success.textContent = 'OTP sent to your phone!';
-                        success.style.display = 'block';
                     }
+                    success.style.display = 'block';
                     
                     startCountdown();
                 } else {
-                    error.textContent = data.message;
+                    error.textContent = data.message || 'Failed to send OTP';
                     error.style.display = 'block';
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
                 }
             } catch (err) {
-                error.textContent = 'Failed to send OTP. Please try again.';
+                showDebug('Error: ' + err.message);
+                error.textContent = 'Failed to connect to server. Make sure the app is running.';
                 error.style.display = 'block';
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
@@ -616,7 +578,6 @@
                 }
             }
             
-            // Update hidden OTP value
             const inputs = document.querySelectorAll('.otp-digit');
             let otp = '';
             inputs.forEach(inp => otp += inp.value);
@@ -628,11 +589,13 @@
             const otp = document.getElementById('otp-value').value;
             const error = document.getElementById('error');
             
-            if (otp.length !== 6) {
+            if (!otp || otp.length !== 6) {
                 error.textContent = 'Please enter the complete 6-digit OTP';
                 error.style.display = 'block';
                 return;
             }
+            
+            showDebug('Verifying OTP: ' + otp);
             
             const res = await fetch('/api/auth/phone/verify', {
                 method: 'POST',
@@ -641,11 +604,12 @@
             });
             
             const data = await res.json();
+            showDebug('Verify Response: ' + JSON.stringify(data));
             
             if (data.success) {
                 redirectUser(data.user);
             } else {
-                error.textContent = data.message;
+                error.textContent = data.message || 'Invalid OTP';
                 error.style.display = 'block';
             }
         }
@@ -674,7 +638,6 @@
             }, 1000);
         }
         
-        // Phone with Password Login
         async function handlePhonePasswordLogin(e) {
             e.preventDefault();
             const countryCode = document.getElementById('phone-password-country').value;
@@ -700,40 +663,56 @@
             }
         }
         
-        // Google Sign-In
         function handleGoogleSignIn(response) {
             const error = document.getElementById('error');
+            const googleError = document.getElementById('google-error');
             error.style.display = 'none';
+            googleError.style.display = 'none';
             
-            // Decode the JWT token to get user info
-            const tokenPayload = JSON.parse(atob(response.credential.split('.')[1]));
+            if (!response || !response.credential) {
+                googleError.textContent = 'Google sign-in failed. No credential received.';
+                googleError.style.display = 'block';
+                return;
+            }
             
-            fetch('/api/auth/google', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    googleToken: response.credential,
-                    googleId: tokenPayload.sub,
-                    name: tokenPayload.name,
-                    email: tokenPayload.email
+            showDebug('Google sign-in response received');
+            
+            try {
+                const tokenPayload = JSON.parse(atob(response.credential.split('.')[1]));
+                showDebug('User: ' + tokenPayload.email);
+                
+                fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        googleToken: response.credential,
+                        googleId: tokenPayload.sub,
+                        name: tokenPayload.name,
+                        email: tokenPayload.email
+                    })
                 })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    redirectUser(data.user);
-                } else {
-                    error.textContent = data.message || 'Google sign-in failed';
+                .then(res => res.json())
+                .then(data => {
+                    showDebug('Server response: ' + JSON.stringify(data));
+                    if (data.success) {
+                        redirectUser(data.user);
+                    } else {
+                        error.textContent = data.message || 'Google sign-in failed';
+                        error.style.display = 'block';
+                    }
+                })
+                .catch(err => {
+                    showDebug('Fetch error: ' + err.message);
+                    error.textContent = 'Failed to connect to server: ' + err.message;
                     error.style.display = 'block';
-                }
-            })
-            .catch(err => {
-                error.textContent = 'Google sign-in failed. Please try again.';
+                });
+            } catch (err) {
+                showDebug('Parse error: ' + err.message);
+                error.textContent = 'Google sign-in parse error: ' + err.message;
                 error.style.display = 'block';
-            });
+            }
         }
         
-        // Registration
         async function handleRegister(e) {
             e.preventDefault();
             const name = document.getElementById('reg-name').value;
@@ -744,6 +723,12 @@
             const error = document.getElementById('error');
             
             error.style.display = 'none';
+            
+            if (!name || !password) {
+                error.textContent = 'Name and password are required';
+                error.style.display = 'block';
+                return;
+            }
             
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
@@ -767,7 +752,6 @@
             }
         }
         
-        // Redirect based on role
         function redirectUser(user) {
             if (user.role === 'owner') {
                 window.location.href = '/owner';
@@ -777,6 +761,15 @@
                 window.location.href = '/';
             }
         }
+        
+        // Initialize - check if Google Sign-In loaded
+        window.onload = function() {
+            if (typeof google === 'undefined') {
+                showDebug('Warning: Google Sign-In script not loaded');
+            } else {
+                console.log('Google Sign-In initialized');
+            }
+        };
     </script>
 </body>
 </html>

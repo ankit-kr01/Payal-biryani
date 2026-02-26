@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard - Payal Biryani</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-red: #D32F2F;
+            --primary-yellow: #FFC107;
+            --dark-bg: #1A1A1A;
+            --light-bg: #f5f5f5;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--light-bg);
+            min-height: 100vh;
+        }
+        .header {
+            background: var(--primary-red);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-yellow);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-red);
+            font-size: 24px;
+        }
+        .logo h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-info span {
+            font-weight: 500;
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .dashboard-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            background: var(--primary-red);
+            color: white;
+            box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .order-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+        .order-card:hover {
+            transform: translateY(-2px);
+        }
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .order-id {
+            font-weight: 600;
+            color: var(--primary-red);
+        }
+        .order-date {
+            color: #666;
+            font-size: 0.85rem;
+        }
+        .order-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        .status-pending { background: #fff3e0; color: #e65100; }
+        .status-received { background: #e3f2fd; color: #1565c0; }
+        .status-preparing { background: #fff3e0; color: #e65100; }
+        .status-cooked { background: #e8f5e9; color: #2e7d32; }
+        .status-out_for_delivery { background: #e3f2fd; color: #1565c0; }
+        .status-delivered { background: #e8f5e9; color: #2e7d32; }
+        .status-cancelled { background: #ffebee; color: #c62828; }
+
+        .order-items {
+            margin-bottom: 15px;
+        }
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .order-total {
+            font-weight: 600;
+            color: var(--primary-red);
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .track-btn {
+            background: var(--primary-yellow);
+            color: #212121;
+        }
+        .track-btn:hover {
+            background: #ffb300;
+        }
+        .chat-btn {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        .chat-btn:hover {
+            background: #bbdefb;
+        }
+        .complaint-btn {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .complaint-btn:hover {
+            background: #ffcdd2;
+        }
+
+        .profile-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .profile-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #212121;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-yellow);
+        }
+        .save-btn {
+            background: var(--primary-red);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .save-btn:hover {
+            background: #B71C1C;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+        .chat-messages {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .chat-message.customer {
+            background: #e3f2fd;
+            margin-left: 20px;
+        }
+        .chat-message.owner {
+            background: #fff3e0;
+            margin-right: 20px;
+        }
+        .chat-message.agent {
+            background: #e8f5e9;
+            margin-right: 20px;
+        }
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input textarea {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: none;
+        }
+        .send-btn {
+            background: var(--primary-red);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .complaint-form textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #ccc;
+        }
+
+        @media (max-width: 768px) {
+            .profile-form {
+                grid-template-columns: 1fr;
+            }
+            .orders-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-utensils"></i></div>
+                <h1>Payal Biryani</h1>
+            </div>
+            <div class="user-info">
+                <span id="user-name">Loading...</span>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="dashboard-tabs">
+            <button class="tab-btn active" onclick="showTab('orders')">
+                <i class="fas fa-shopping-bag"></i> My Orders
+            </button>
+            <button class="tab-btn" onclick="showTab('profile')">
+                <i class="fas fa-user"></i> Profile
+            </button>
+        </div>
+
+        <!-- Orders Tab -->
+        <div class="tab-content active" id="orders-tab">
+            <div class="loading" id="orders-loading">
+                <i class="fas fa-spinner fa-spin"></i> Loading orders...
+            </div>
+            <div class="orders-grid" id="orders-grid"></div>
+            <div class="empty-state" id="orders-empty" style="display: none;">
+                <i class="fas fa-shopping-cart"></i>
+                <h3>No orders yet</h3>
+                <p>Your order history will appear here</p>
+            </div>
+        </div>
+
+        <!-- Profile Tab -->
+        <div class="tab-content" id="profile-tab">
+            <div class="profile-section">
+                <h2 style="margin-bottom: 20px; color: #212121;">My Profile</h2>
+                <form class="profile-form" onsubmit="updateProfile(event)">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="profile-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="profile-email">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="profile-phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <textarea id="profile-address" rows="3"></textarea>
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <button type="submit" class="save-btn">
+                            <i class="fas fa-save"></i> Update Profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div class="modal" id="chat-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chat with Restaurant</h3>
+                <button class="modal-close" onclick="closeModal('chat-modal')">&times;</button>
+            </div>
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input">
+                <textarea id="chat-message" placeholder="Type your message..." rows="2"></textarea>
+                <button class="send-btn" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complaint Modal -->
+    <div class="modal" id="complaint-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Raise Complaint</h3>
+                <button class="modal-close" onclick="closeModal('complaint-modal')">&times;</button>
+            </div>
+            <form onsubmit="submitComplaint(event)">
+                <div class="form-group">
+                    <label>Subject</label>
+                    <input type="text" id="complaint-subject" placeholder="Brief subject" required>
+                </div>
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea id="complaint-message" placeholder="Describe your issue..." required></textarea>
+                </div>
+                <button type="submit" class="save-btn" style="width: 100%;">
+                    <i class="fas fa-paper-plane"></i> Submit Complaint
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal" id="order-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Order Details</h3>
+                <button class="modal-close" onclick="closeModal('order-modal')">&times;</button>
+            </div>
+            <div id="order-details"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentOrderId = null;
+
+        // Initialize
+        window.onload = function() {
+            checkAuth();
+        };
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/user');
+                const data = await res.json();
+
+                if (!data.user) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                currentUser = data.user;
+                document.getElementById('user-name').textContent = data.user.name;
+                loadOrders();
+                loadProfile();
+            } catch (err) {
+                console.error('Auth check failed:', err);
+                window.location.href = '/login';
+            }
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            document.querySelector(`[onclick="showTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
+        }
+
+        async function loadOrders() {
+            try {
+                const res = await fetch('/api/customer/orders');
+                const data = await res.json();
+
+                document.getElementById('orders-loading').style.display = 'none';
+
+                if (data.success && data.orders.length > 0) {
+                    displayOrders(data.orders);
+                } else {
+                    document.getElementById('orders-empty').style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Failed to load orders:', err);
+                document.getElementById('orders-loading').innerHTML = '<i class="fas fa-exclamation-triangle"></i> Failed to load orders';
+            }
+        }
+
+        function displayOrders(orders) {
+            const grid = document.getElementById('orders-grid');
+            grid.innerHTML = '';
+
+            orders.forEach(order => {
+                const card = document.createElement('div');
+                card.className = 'order-card';
+
+                const statusClass = `status-${order.order_status.replace('_', '_')}`;
+                const itemsHtml = order.items.map(item =>
+                    `<div class="order-item">
+                        <span>${item.name} x${item.quantity}</span>
+                        <span>₹${item.price * item.quantity}</span>
+                    </div>`
+                ).join('');
+
+                card.innerHTML = `
+                    <div class="order-header">
+                        <div>
+                            <div class="order-id">Order #${order.id}</div>
+                            <div class="order-date">${new Date(order.created_at).toLocaleDateString()}</div>
+                        </div>
+                        <div class="order-status ${statusClass}">${order.order_status.replace('_', ' ')}</div>
+                    </div>
+                    <div class="order-items">
+                        ${itemsHtml}
+                        <div class="order-total">Total: ₹${order.total_amount}</div>
+                    </div>
+                    <div class="order-actions">
+                        <button class="action-btn track-btn" onclick="trackOrder(${order.id})">
+                            <i class="fas fa-map-marker-alt"></i> Track
+                        </button>
+                        <button class="action-btn chat-btn" onclick="openChat(${order.id})">
+                            <i class="fas fa-comments"></i> Chat
+                        </button>
+                        <button class="action-btn complaint-btn" onclick="openComplaint(${order.id})">
+                            <i class="fas fa-exclamation-triangle"></i> Complaint
+                        </button>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        async function loadProfile() {
+            try {
+                const res = await fetch('/api/customer/profile');
+                const data = await res.json();
+
+                if (data.success) {
+                    document.getElementById('profile-name').value = data.user.name || '';
+                    document.getElementById('profile-email').value = data.user.email || '';
+                    document.getElementById('profile-phone').value = data.user.phone || '';
+                    document.getElementById('profile-address').value = data.user.address || '';
+                }
+            } catch (err) {
+                console.error('Failed to load profile:', err);
+            }
+        }
+
+        async function updateProfile(e) {
+            e.preventDefault();
+
+            const data = {
+                name: document.getElementById('profile-name').value,
+                email: document.getElementById('profile-email').value,
+                phone: document.getElementById('profile-phone').value,
+                address: document.getElementById('profile-address').value
+            };
+
+            try {
+                const res = await fetch('/api/customer/profile', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+
+                if (result.success) {
+                    alert('Profile updated successfully!');
+                    document.getElementById('user-name').textContent = data.name;
+                } else {
+                    alert('Failed to update profile: ' + result.message);
+                }
+            } catch (err) {
+                console.error('Profile update failed:', err);
+                alert('Failed to update profile');
+            }
+        }
+
+        async function trackOrder(orderId) {
+            try {
+                const res = await fetch(`/api/customer/track/${orderId}`);
+                const data = await res.json();
+
+                if (data.success) {
+                    showOrderDetails(data.order);
+                } else {
+                    alert('Order not found');
+                }
+            } catch (err) {
+                console.error('Failed to track order:', err);
+                alert('Failed to load order details');
+            }
+        }
+
+        function showOrderDetails(order) {
+            const details = document.getElementById('order-details');
+
+            const statusHistory = order.status_history || [];
+            const historyHtml = statusHistory.map(h =>
+                `<div style="padding: 8px; border-left: 3px solid #ddd; margin: 5px 0;">
+                    <strong>${h.status.replace('_', ' ')}</strong> - ${new Date(h.updated_at).toLocaleString()}
+                    ${h.note ? `<br><small>${h.note}</small>` : ''}
+                </div>`
+            ).join('');
+
+            details.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <h4>Order #${order.id}</h4>
+                    <p><strong>Status:</strong> <span class="order-status status-${order.order_status}">${order.order_status.replace('_', ' ')}</span></p>
+                    <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString()}</p>
+                    <p><strong>Customer:</strong> ${order.customer_name}</p>
+                    <p><strong>Phone:</strong> ${order.customer_phone}</p>
+                    <p><strong>Address:</strong> ${order.customer_address}</p>
+                    <p><strong>Payment:</strong> ${order.payment_method} - ${order.payment_status}</p>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4>Items:</h4>
+                    ${order.items.map(item => `<div>${item.name} x${item.quantity} - ₹${item.price * item.quantity}</div>`).join('')}
+                    <div style="font-weight: bold; margin-top: 10px;">Total: ₹${order.total_amount}</div>
+                </div>
+
+                ${order.agent_name ? `<div style="margin-bottom: 20px;">
+                    <h4>Delivery Agent:</h4>
+                    <p><strong>Name:</strong> ${order.agent_name}</p>
+                    <p><strong>Phone:</strong> ${order.agent_phone}</p>
+                </div>` : ''}
+
+                ${statusHistory.length > 0 ? `<div>
+                    <h4>Status History:</h4>
+                    ${historyHtml}
+                </div>` : ''}
+            `;
+
+            document.getElementById('order-modal').classList.add('active');
+        }
+
+        async function openChat(orderId) {
+            currentOrderId = orderId;
+            document.getElementById('chat-modal').classList.add('active');
+            loadChatMessages();
+        }
+
+        async function loadChatMessages() {
+            try {
+                const res = await fetch(`/api/chat/${currentOrderId}`);
+                const data = await res.json();
+
+                const messagesDiv = document.getElementById('chat-messages');
+                messagesDiv.innerHTML = '';
+
+                if (data.success && data.messages.length > 0) {
+                    data.messages.forEach(msg => {
+                        const msgDiv = document.createElement('div');
+                        msgDiv.className = `chat-message ${msg.user_role}`;
+                        msgDiv.innerHTML = `
+                            <strong>${msg.user_name} (${msg.user_role}):</strong><br>
+                            ${msg.message}<br>
+                            <small style="color: #666;">${new Date(msg.created_at).toLocaleString()}</small>
+                        `;
+                        messagesDiv.appendChild(msgDiv);
+                    });
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                } else {
+                    messagesDiv.innerHTML = '<p style="text-align: center; color: #666;">No messages yet. Start the conversation!</p>';
+                }
+            } catch (err) {
+                console.error('Failed to load chat:', err);
+            }
+        }
+
+        async function sendMessage() {
+            const message = document.getElementById('chat-message').value.trim();
+
+            if (!message) return;
+
+            try {
+                const res = await fetch(`/api/chat/${currentOrderId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, to_role: 'owner' })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    document.getElementById('chat-message').value = '';
+                    loadChatMessages();
+                } else {
+                    alert('Failed to send message: ' + data.message);
+                }
+            } catch (err) {
+                console.error('Failed to send message:', err);
+                alert('Failed to send message');
+            }
+        }
+
+        async function openComplaint(orderId) {
+            currentOrderId = orderId;
+            document.getElementById('complaint-modal').classList.add('active');
+        }
+
+        async function submitComplaint(e) {
+            e.preventDefault();
+
+            const data = {
+                order_id: currentOrderId,
+                subject: document.getElementById('complaint-subject').value,
+                message: document.getElementById('complaint-message').value
+            };
+
+            try {
+                const res = await fetch('/api/customer/complaint', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+
+                if (result.success) {
+                    alert('Complaint submitted successfully!');
+                    closeModal('complaint-modal');
+                    document.getElementById('complaint-subject').value = '';
+                    document.getElementById('complaint-message').value = '';
+                } else {
+                    alert('Failed to submit complaint: ' + result.message);
+                }
+            } catch (err) {
+                console.error('Failed to submit complaint:', err);
+                alert('Failed to submit complaint');
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+            } catch (err) {
+                console.error('Logout error:', err);
+            }
+            window.location.href = '/login';
+        }
+
+        // Enter key support for chat
+        document.getElementById('chat-message').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
