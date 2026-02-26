@@ -6,6 +6,7 @@
     <title>Login - Payal Biryani</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
     <style>
         :root {
             --primary-red: #D32F2F;
@@ -21,13 +22,14 @@
             justify-content: center;
             background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)),
                         url('https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=1920&q=80') center/cover;
+            padding: 20px;
         }
         .login-container {
             background: white;
             padding: 40px;
             border-radius: 20px;
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
         .logo {
@@ -53,6 +55,38 @@
         }
         .logo h1 span { color: var(--primary-red); }
         .logo p { color: #757575; font-size: 0.9rem; }
+        
+        /* Tab Navigation */
+        .auth-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 25px;
+            background: #f5f5f5;
+            padding: 5px;
+            border-radius: 12px;
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+        .auth-tab.active {
+            background: var(--primary-red);
+            color: white;
+            box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3);
+        }
+        
+        /* Form Sections */
+        .auth-section { display: none; }
+        .auth-section.active { display: block; }
+        
         .form-group { margin-bottom: 20px; }
         .form-group label {
             display: block;
@@ -72,6 +106,24 @@
             outline: none;
             border-color: var(--primary-yellow);
         }
+        .form-group .country-code {
+            display: flex;
+            align-items: center;
+        }
+        .form-group .country-code select {
+            padding: 15px;
+            border: 2px solid #E0E0E0;
+            border-radius: 12px 0 0 12px;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            background: #f9f9f9;
+            border-right: none;
+        }
+        .form-group .country-code input {
+            border-radius: 0 12px 12px 0;
+        }
+        
+        /* Buttons */
         .login-btn {
             width: 100%;
             padding: 15px;
@@ -83,8 +135,106 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
         }
         .login-btn:hover { background: #B71C1C; }
+        .login-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* Social Login */
+        .social-divider {
+            display: flex;
+            align-items: center;
+            margin: 25px 0;
+        }
+        .social-divider::before,
+        .social-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #E0E0E0;
+        }
+        .social-divider span {
+            padding: 0 15px;
+            color: #757575;
+            font-size: 0.85rem;
+        }
+        
+        .social-btn {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #E0E0E0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-family: 'Poppins', sans-serif;
+        }
+        .social-btn.google {
+            background: white;
+            color: #333;
+        }
+        .social-btn.google:hover {
+            background: #f5f5f5;
+            border-color: #ddd;
+        }
+        .social-btn.phone {
+            background: var(--primary-yellow);
+            color: #212121;
+            border-color: var(--primary-yellow);
+        }
+        .social-btn.phone:hover {
+            background: #ffb300;
+        }
+        
+        /* OTP Verification */
+        .otp-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .otp-inputs input {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 1.5rem;
+            border: 2px solid #E0E0E0;
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+        }
+        .otp-inputs input:focus {
+            border-color: var(--primary-yellow);
+            outline: none;
+        }
+        
+        .resend-otp {
+            text-align: center;
+            margin-top: 15px;
+            color: #757575;
+            font-size: 0.9rem;
+        }
+        .resend-otp button {
+            background: none;
+            border: none;
+            color: var(--primary-red);
+            cursor: pointer;
+            font-weight: 500;
+            font-family: 'Poppins', sans-serif;
+        }
+        .resend-otp button:disabled {
+            color: #ccc;
+            cursor: not-allowed;
+        }
+        
         .back-link {
             display: block;
             text-align: center;
@@ -93,6 +243,7 @@
             text-decoration: none;
         }
         .back-link:hover { color: var(--primary-red); }
+        
         .error {
             background: #ffebee;
             color: var(--primary-red);
@@ -101,6 +252,15 @@
             margin-bottom: 20px;
             display: none;
         }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
         .user-types {
             display: flex;
             gap: 10px;
@@ -121,6 +281,20 @@
         }
         .user-type i { font-size: 1.5rem; margin-bottom: 5px; display: block; }
         .user-type span { font-size: 0.85rem; }
+        
+        .switch-auth {
+            text-align: center;
+            margin-top: 15px;
+            color: #757575;
+            font-size: 0.9rem;
+        }
+        .switch-auth a {
+            color: var(--primary-red);
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .switch-auth a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -128,49 +302,479 @@
         <div class="logo">
             <div class="logo-icon"><i class="fas fa-utensils"></i></div>
             <h1>Payal <span>Biryani</span></h1>
-            <p>Login to your account</p>
+            <p>Welcome back! Login to continue</p>
         </div>
+        
         <div class="error" id="error"></div>
-        <form onsubmit="handleLogin(event)">
-            <div class="form-group">
-                <label>Username</label>
-                <input type="text" id="username" required placeholder="Enter username">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="password" required placeholder="Enter password">
-            </div>
-            <button type="submit" class="login-btn">
-                <i class="fas fa-sign-in-alt"></i> Login
+        <div class="success" id="success"></div>
+        
+        <!-- Auth Tabs -->
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="showAuthSection('password')">
+                <i class="fas fa-envelope"></i> Email
             </button>
-        </form>
+            <button class="auth-tab" onclick="showAuthSection('phone')">
+                <i class="fas fa-phone"></i> Phone
+            </button>
+            <button class="auth-tab" onclick="showAuthSection('google')">
+                <i class="fab fa-google"></i> Google
+            </button>
+        </div>
+        
+        <!-- Email/Password Login -->
+        <div class="auth-section active" id="password-section">
+            <form onsubmit="handleEmailLogin(event)">
+                <div class="form-group">
+                    <label>Email or Username</label>
+                    <input type="text" id="email-username" placeholder="Enter email or username">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="email-password" placeholder="Enter password">
+                </div>
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+            <div class="switch-auth">
+                Don't have an account? <a onclick="showAuthSection('register')">Sign up</a>
+            </div>
+        </div>
+        
+        <!-- Phone OTP Login -->
+        <div class="auth-section" id="phone-section">
+            <div id="phone-login-form">
+                <form onsubmit="handleSendOTP(event)">
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <div class="country-code">
+                            <select id="country-code">
+                                <option value="+91">+91</option>
+                                <option value="+1">+1</option>
+                                <option value="+44">+44</option>
+                            </select>
+                            <input type="tel" id="phone-number" placeholder="Enter phone number" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="login-btn" id="send-otp-btn">
+                        <i class="fas fa-paper-plane"></i> Send OTP
+                    </button>
+                </form>
+            </div>
+            
+            <div id="phone-otp-form" style="display: none;">
+                <form onsubmit="handleVerifyOTP(event)">
+                    <div class="form-group">
+                        <label>Enter OTP sent to your phone</label>
+                        <div class="otp-inputs">
+                            <input type="text" maxlength="1" class="otp-digit" oninput="handleOTPInput(this, 0)">
+                            <input type="text" maxlength="1" class="otp-digit" oninput="handleOTPInput(this, 1)">
+                            <input type="text" maxlength="1" class="otp-digit" oninput="handleOTPInput(this, 2)">
+                            <input type="text" maxlength="1" class="otp-digit" oninput="handleOTPInput(this, 3)">
+                            <input type="text" maxlength="1" class="otp-digit" oninput="handleOTPInput(this, 4)">
+                            <input type="text" maxlength="1" class="otp-digit" oninput="handleOTPInput(this, 5)">
+                        </div>
+                        <input type="hidden" id="otp-value">
+                    </div>
+                    <button type="submit" class="login-btn">
+                        <i class="fas fa-check"></i> Verify & Login
+                    </button>
+                </form>
+                <div class="resend-otp">
+                    Didn't receive OTP? <button onclick="handleResendOTP()" id="resend-btn">Resend OTP</button>
+                    <span id="countdown" style="display: none;">Wait <span id="timer">60</span>s</span>
+                </div>
+            </div>
+            
+            <div class="switch-auth">
+                Or <a onclick="showPhonePassword()">Login with Password</a>
+            </div>
+        </div>
+        
+        <!-- Phone with Password -->
+        <div class="auth-section" id="phone-password-section">
+            <form onsubmit="handlePhonePasswordLogin(event)">
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <div class="country-code">
+                        <select id="phone-password-country">
+                            <option value="+91">+91</option>
+                            <option value="+1">+1</option>
+                        </select>
+                        <input type="tel" id="phone-password-number" placeholder="Enter phone number" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="phone-password" placeholder="Enter password">
+                </div>
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+            <div class="switch-auth">
+                <a onclick="showAuthSection('phone')">Login with OTP instead</a>
+            </div>
+        </div>
+        
+        <!-- Google Sign-In -->
+        <div class="auth-section" id="google-section">
+            <p style="text-align: center; color: #757575; margin-bottom: 20px;">
+                Sign in with your Google account for quick and secure access
+            </p>
+            <div class="g_id_onload"
+                 data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="handleGoogleSignIn"
+                 data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="outline"
+                 data-text="signin_with"
+                 data-size="large"
+                 data-logo_alignment="left"
+                 data-width="300">
+            </div>
+            <div class="switch-auth">
+                Or <a onclick="showAuthSection('phone')">Sign in with Phone</a>
+            </div>
+        </div>
+        
+        <!-- Registration -->
+        <div class="auth-section" id="register-section">
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="reg-name" placeholder="Enter your name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="reg-email" placeholder="Enter email">
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <div class="country-code">
+                        <select id="reg-country-code">
+                            <option value="+91">+91</option>
+                            <option value="+1">+1</option>
+                        </select>
+                        <input type="tel" id="reg-phone" placeholder="Enter phone number">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="reg-password" placeholder="Create password" required>
+                </div>
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+            </form>
+            <div class="switch-auth">
+                Already have an account? <a onclick="showAuthSection('password')">Login</a>
+            </div>
+        </div>
+        
         <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Website</a>
     </div>
+    
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
-        async function handleLogin(e) {
-            e.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const error = document.getElementById('error');
+        let currentPhone = '';
+        
+        // Tab switching
+        function showAuthSection(section) {
+            document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.auth-section').forEach(sec => sec.classList.remove('active'));
             
-            const res = await fetch('/api/login', {
+            if (section === 'password') {
+                document.querySelectorAll('.auth-tab')[0].classList.add('active');
+                document.getElementById('password-section').classList.add('active');
+            } else if (section === 'phone') {
+                document.querySelectorAll('.auth-tab')[1].classList.add('active');
+                document.getElementById('phone-section').classList.add('active');
+            } else if (section === 'google') {
+                document.querySelectorAll('.auth-tab')[2].classList.add('active');
+                document.getElementById('google-section').classList.add('active');
+            } else if (section === 'register') {
+                document.querySelectorAll('.auth-tab')[0].classList.add('active');
+                document.getElementById('register-section').classList.add('active');
+            }
+        }
+        
+        function showPhonePassword() {
+            document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.auth-section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.auth-tab')[1].classList.add('active');
+            document.getElementById('phone-password-section').classList.add('active');
+        }
+        
+        // Email Login
+        async function handleEmailLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('email-username').value;
+            const password = document.getElementById('email-password').value;
+            const error = document.getElementById('error');
+            const success = document.getElementById('success');
+            
+            error.style.display = 'none';
+            success.style.display = 'none';
+            
+            // Try email login first, then username
+            let res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ email: username, password: password })
+            });
+            
+            // If not registered as email, try username login
+            if (!res.ok) {
+                res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+            }
+            
+            const data = await res.json();
+            
+            if (data.success) {
+                redirectUser(data.user);
+            } else {
+                // Try registration flow - maybe they want to register
+                error.textContent = data.message || 'Login failed';
+                error.style.display = 'block';
+            }
+        }
+        
+        // Phone OTP
+        async function handleSendOTP(e) {
+            e.preventDefault();
+            const countryCode = document.getElementById('country-code').value;
+            const phone = document.getElementById('phone-number').value;
+            const error = document.getElementById('error');
+            const success = document.getElementById('success');
+            const btn = document.getElementById('send-otp-btn');
+            
+            error.style.display = 'none';
+            success.style.display = 'none';
+            
+            if (phone.length < 10) {
+                error.textContent = 'Please enter a valid phone number';
+                error.style.display = 'block';
+                return;
+            }
+            
+            currentPhone = countryCode + phone;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            
+            try {
+                const res = await fetch('/api/auth/phone/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: currentPhone })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('phone-login-form').style.display = 'none';
+                    document.getElementById('phone-otp-form').style.display = 'block';
+                    
+                    // Show OTP for development (remove in production)
+                    if (data.dev_otp) {
+                        success.textContent = `OTP sent! (Dev: ${data.dev_otp})`;
+                        success.style.display = 'block';
+                    } else {
+                        success.textContent = 'OTP sent to your phone!';
+                        success.style.display = 'block';
+                    }
+                    
+                    startCountdown();
+                } else {
+                    error.textContent = data.message;
+                    error.style.display = 'block';
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
+                }
+            } catch (err) {
+                error.textContent = 'Failed to send OTP. Please try again.';
+                error.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
+            }
+        }
+        
+        function handleOTPInput(input, index) {
+            if (input.value.length === 1) {
+                const inputs = document.querySelectorAll('.otp-digit');
+                if (index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            }
+            
+            // Update hidden OTP value
+            const inputs = document.querySelectorAll('.otp-digit');
+            let otp = '';
+            inputs.forEach(inp => otp += inp.value);
+            document.getElementById('otp-value').value = otp;
+        }
+        
+        async function handleVerifyOTP(e) {
+            e.preventDefault();
+            const otp = document.getElementById('otp-value').value;
+            const error = document.getElementById('error');
+            
+            if (otp.length !== 6) {
+                error.textContent = 'Please enter the complete 6-digit OTP';
+                error.style.display = 'block';
+                return;
+            }
+            
+            const res = await fetch('/api/auth/phone/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: currentPhone, otp: otp })
             });
             
             const data = await res.json();
+            
             if (data.success) {
-                if (data.user.role === 'owner') {
-                    window.location.href = '/owner';
-                } else if (data.user.role === 'agent') {
-                    window.location.href = '/agent';
-                } else {
-                    window.location.href = '/';
-                }
+                redirectUser(data.user);
             } else {
                 error.textContent = data.message;
                 error.style.display = 'block';
+            }
+        }
+        
+        async function handleResendOTP() {
+            document.getElementById('resend-btn').style.display = 'none';
+            await handleSendOTP({ preventDefault: () => {} });
+        }
+        
+        function startCountdown() {
+            let countdown = 60;
+            const timer = document.getElementById('timer');
+            const countdownEl = document.getElementById('countdown');
+            
+            countdownEl.style.display = 'inline';
+            
+            const interval = setInterval(() => {
+                countdown--;
+                timer.textContent = countdown;
+                
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    document.getElementById('resend-btn').style.display = 'inline';
+                    countdownEl.style.display = 'none';
+                }
+            }, 1000);
+        }
+        
+        // Phone with Password Login
+        async function handlePhonePasswordLogin(e) {
+            e.preventDefault();
+            const countryCode = document.getElementById('phone-password-country').value;
+            const phone = document.getElementById('phone-password-number').value;
+            const password = document.getElementById('phone-password').value;
+            const error = document.getElementById('error');
+            
+            error.style.display = 'none';
+            
+            const res = await fetch('/api/auth/phone/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: countryCode + phone, password })
+            });
+            
+            const data = await res.json();
+            
+            if (data.success) {
+                redirectUser(data.user);
+            } else {
+                error.textContent = data.message;
+                error.style.display = 'block';
+            }
+        }
+        
+        // Google Sign-In
+        function handleGoogleSignIn(response) {
+            const error = document.getElementById('error');
+            error.style.display = 'none';
+            
+            // Decode the JWT token to get user info
+            const tokenPayload = JSON.parse(atob(response.credential.split('.')[1]));
+            
+            fetch('/api/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    googleToken: response.credential,
+                    googleId: tokenPayload.sub,
+                    name: tokenPayload.name,
+                    email: tokenPayload.email
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    redirectUser(data.user);
+                } else {
+                    error.textContent = data.message || 'Google sign-in failed';
+                    error.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                error.textContent = 'Google sign-in failed. Please try again.';
+                error.style.display = 'block';
+            });
+        }
+        
+        // Registration
+        async function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const countryCode = document.getElementById('reg-country-code').value;
+            const phone = document.getElementById('reg-phone').value;
+            const password = document.getElementById('reg-password').value;
+            const error = document.getElementById('error');
+            
+            error.style.display = 'none';
+            
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: name.toLowerCase().replace(/\s/g, '_') + '_' + Date.now(),
+                    name,
+                    email,
+                    phone: phone ? countryCode + phone : '',
+                    password
+                })
+            });
+            
+            const data = await res.json();
+            
+            if (data.success) {
+                redirectUser(data.user);
+            } else {
+                error.textContent = data.message;
+                error.style.display = 'block';
+            }
+        }
+        
+        // Redirect based on role
+        function redirectUser(user) {
+            if (user.role === 'owner') {
+                window.location.href = '/owner';
+            } else if (user.role === 'agent') {
+                window.location.href = '/agent';
+            } else {
+                window.location.href = '/';
             }
         }
     </script>

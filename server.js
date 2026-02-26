@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,7 +14,8 @@ const DATA_FILE = 'data.json';
 let data = {
   users: [],
   menu_items: [],
-  orders: []
+  orders: [],
+  otp_store: {} // For phone OTP storage
 };
 
 // Load existing data or create defaults
@@ -25,17 +27,35 @@ if (fs.existsSync(DATA_FILE)) {
   }
 }
 
+// Ensure otp_store exists
+if (!data.otp_store) {
+  data.otp_store = {};
+}
+
 // Save data to file
 function saveData() {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
+// Generate OTP
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Send OTP (simulated - in production use Twilio)
+function sendOTP(phone, otp) {
+  // In production, integrate with Twilio or other SMS service
+  // For now, we'll log the OTP (in production, remove this)
+  console.log(`OTP for ${phone}: ${otp}`);
+  return true;
+}
+
 // Initialize default data if empty
 if (data.users.length === 0) {
   data.users = [
-    { id: 1, username: 'owner', password: bcrypt.hashSync('owner123', 10), role: 'owner', name: 'Restaurant Owner', phone: '+91 98765 43210' },
-    { id: 2, username: 'agent1', password: bcrypt.hashSync('agent123', 10), role: 'agent', name: 'Delivery Agent 1', phone: '9876543210' },
-    { id: 3, username: 'agent2', password: bcrypt.hashSync('agent123', 10), role: 'agent', name: 'Delivery Agent 2', phone: '9876543211' }
+    { id: 1, username: 'owner', password: bcrypt.hashSync('owner123', 10), role: 'owner', name: 'Restaurant Owner', phone: '+91 98765 43210', auth_provider: 'email' },
+    { id: 2, username: 'agent1', password: bcrypt.hashSync('agent123', 10), role: 'agent', name: 'Delivery Agent 1', phone: '9876543210', auth_provider: 'email' },
+    { id: 3, username: 'agent2', password: bcrypt.hashSync('agent123', 10), role: 'agent', name: 'Delivery Agent 2', phone: '9876543211', auth_provider: 'email' }
   ];
   saveData();
 }
@@ -88,7 +108,7 @@ const requireRole = (roles) => {
 
 // API Routes
 
-// Login
+// Login with username/password (existing)
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   const user = data.users.find(u => u.username === username);
@@ -97,7 +117,283 @@ app.post('/api/login', (req, res) => {
     return res.json({ success: false, message: 'Invalid credentials' });
   }
   
-  req.session.user = { id: user.id, username: user.username, role: user.role, name: user.name };
+  req.session.user = { id: user.id, username: user.username, role: user.role, name: user.name, auth_provider: user.auth_provider };
+  res.json({ success: true, user: req.session.user });
+});
+
+// Google Sign-In
+app.post('/api/auth/google', (req, res) => {
+  const { googleToken, name, email, googleId } = req.body;
+  
+  // In production, verify the Google token with Google OAuth2
+  // For now, we'll accept the token and create/update user
+  
+  // Check if user exists with this Google ID
+  let user = data.users.find(u => u.google_id === googleId && u.auth_provider === 'google');
+  
+  if (!user) {
+    // Check if user exists with this email
+    user = data.users.find(u => u.email === email);
+    
+    if (user) {
+      // Link Google account to existing user
+      user.google_id = googleId;
+      user.auth_provider = 'google';
+    } else {
+      // Create new user
+      user = {
+        id: Date.now(),
+        username: email.split('@')[0] + '_' + Date.now(),
+        name: name || email.split('@')[0],
+        email: email,
+        google_id: googleId,
+        phone: '',
+        role: 'customer',
+        auth_provider: 'google',
+        password: '' // No password for Google users
+      };
+      data.users.push(user);
+    }
+    saveData();
+  }
+  
+  req.session.user = { 
+    id: user.id, 
+    username: user.username, 
+    role: user.role, 
+    name: user.name,
+    auth_provider: user.auth_provider,
+    email: user.email
+  };
+  
+  res.json({ success: true, user: req.session.user });
+});
+
+// Phone OTP - Send OTP
+app.post('/api/auth/phone/send-otp', (req, res) => {
+  const { phone } = req.body;
+  
+  if (!phone || phone.length < 10) {
+    return res.json({ success: false, message: 'Invalid phone number' });
+  }
+  
+  // Generate OTP
+  const otp = generateOTP();
+  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+  
+  // Store OTP
+  data.otp_store[phone] = {
+    otp: otp,
+    expiresAt: expiresAt,
+    attempts: 0
+  };
+  saveData();
+  
+  // Send OTP (simulated)
+  sendOTP(phone, otp);
+  
+  res.json({ 
+    success: true, 
+    message: 'OTP sent successfully',
+    // In development, return OTP for testing (remove in production)
+    dev_otp: otp 
+  });
+});
+
+// Phone OTP - Verify OTP and Login/Signup
+app.post('/api/auth/phone/verify', (req, res) => {
+  const { phone, otp, name } = req.body;
+  
+  if (!phone || !otp) {
+    return res.json({ success: false, message: 'Phone number and OTP required' });
+  }
+  
+  const otpData = data.otp_store[phone];
+  
+  if (!otpData) {
+    return res.json({ success: false, message: 'OTP not requested. Please request OTP first.' });
+  }
+  
+  if (Date.now() > otpData.expiresAt) {
+    delete data.otp_store[phone];
+    saveData();
+    return res.json({ success: false, message: 'OTP expired. Please request a new OTP.' });
+  }
+  
+  if (otpData.attempts >= 3) {
+    delete data.otp_store[phone];
+    saveData();
+    return res.json({ success: false, message: 'Too many attempts. Please request a new OTP.' });
+  }
+  
+  if (otpData.otp !== otp) {
+    otpData.attempts++;
+    saveData();
+    return res.json({ success: false, message: 'Invalid OTP. Please try again.' });
+  }
+  
+  // OTP verified - Create or update user
+  let user = data.users.find(u => u.phone === phone && u.auth_provider === 'phone');
+  
+  if (!user) {
+    // Create new user
+    user = {
+      id: Date.now(),
+      username: 'user_' + phone.slice(-4),
+      name: name || 'Customer',
+      phone: phone,
+      email: '',
+      google_id: '',
+      role: 'customer',
+      auth_provider: 'phone',
+      password: '' // No password for phone users
+    };
+    data.users.push(user);
+  } else {
+    // Update user info
+    user.name = name || user.name;
+  }
+  
+  saveData();
+  
+  // Clean up OTP
+  delete data.otp_store[phone];
+  saveData();
+  
+  // Create session
+  req.session.user = { 
+    id: user.id, 
+    username: user.username, 
+    role: user.role, 
+    name: user.name,
+    auth_provider: user.auth_provider,
+    phone: user.phone
+  };
+  
+  res.json({ success: true, user: req.session.user });
+});
+
+// Phone signup with password (alternative flow)
+app.post('/api/auth/phone/signup', (req, res) => {
+  const { phone, password, name } = req.body;
+  
+  if (!phone || !password) {
+    return res.json({ success: false, message: 'Phone and password required' });
+  }
+  
+  // Check if user exists
+  const existingUser = data.users.find(u => u.phone === phone);
+  
+  if (existingUser) {
+    return res.json({ success: false, message: 'Phone number already registered' });
+  }
+  
+  // Create new user
+  const newUser = {
+    id: Date.now(),
+    username: 'user_' + phone.slice(-4),
+    name: name || 'Customer',
+    phone: phone,
+    email: '',
+    google_id: '',
+    role: 'customer',
+    auth_provider: 'phone_password',
+    password: bcrypt.hashSync(password, 10)
+  };
+  
+  data.users.push(newUser);
+  saveData();
+  
+  req.session.user = { 
+    id: newUser.id, 
+    username: newUser.username, 
+    role: newUser.role, 
+    name: newUser.name,
+    auth_provider: newUser.auth_provider,
+    phone: newUser.phone
+  };
+  
+  res.json({ success: true, user: req.session.user });
+});
+
+// Phone login with password
+app.post('/api/auth/phone/login', (req, res) => {
+  const { phone, password } = req.body;
+  
+  if (!phone || !password) {
+    return res.json({ success: false, message: 'Phone and password required' });
+  }
+  
+  const user = data.users.find(u => u.phone === phone && (u.auth_provider === 'phone_password' || u.auth_provider === 'phone'));
+  
+  if (!user) {
+    return res.json({ success: false, message: 'User not found. Please sign up first.' });
+  }
+  
+  // For phone_password users, verify password
+  if (user.auth_provider === 'phone_password') {
+    if (!user.password || !bcrypt.compareSync(password, user.password)) {
+      return res.json({ success: false, message: 'Invalid password' });
+    }
+  } else {
+    // For OTP-only users, they need to use OTP login
+    return res.json({ success: false, message: 'Please use OTP login for this account' });
+  }
+  
+  req.session.user = { 
+    id: user.id, 
+    username: user.username, 
+    role: user.role, 
+    name: user.name,
+    auth_provider: user.auth_provider,
+    phone: user.phone
+  };
+  
+  res.json({ success: true, user: req.session.user });
+});
+
+// Customer registration (email/password)
+app.post('/api/auth/register', (req, res) => {
+  const { username, password, name, email, phone } = req.body;
+  
+  // Check if username exists
+  if (data.users.find(u => u.username === username)) {
+    return res.json({ success: false, message: 'Username already exists' });
+  }
+  
+  // Check if email exists
+  if (email && data.users.find(u => u.email === email)) {
+    return res.json({ success: false, message: 'Email already registered' });
+  }
+  
+  // Check if phone exists
+  if (phone && data.users.find(u => u.phone === phone)) {
+    return res.json({ success: false, message: 'Phone number already registered' });
+  }
+  
+  const newUser = {
+    id: Date.now(),
+    username,
+    password: bcrypt.hashSync(password, 10),
+    name: name || username,
+    email: email || '',
+    phone: phone || '',
+    google_id: '',
+    role: 'customer',
+    auth_provider: 'email'
+  };
+  
+  data.users.push(newUser);
+  saveData();
+  
+  req.session.user = { 
+    id: newUser.id, 
+    username: newUser.username, 
+    role: newUser.role, 
+    name: newUser.name,
+    auth_provider: newUser.auth_provider
+  };
+  
   res.json({ success: true, user: req.session.user });
 });
 
@@ -253,5 +549,6 @@ app.listen(PORT, () => {
   console.log('Login Credentials:');
   console.log('  Owner: username: owner, password: owner123');
   console.log('  Agent: username: agent1, password: agent123');
+  console.log('  Customer: Use Google Sign-In, Phone OTP, or Email registration');
   console.log('');
 });
