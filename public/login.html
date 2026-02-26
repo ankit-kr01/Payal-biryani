@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Payal Biryani</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-red: #D32F2F;
+            --primary-yellow: #FFC107;
+            --dark-bg: #1A1A1A;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)),
+                        url('https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=1920&q=80') center/cover;
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--primary-red), #FF6D00);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-yellow);
+            font-size: 30px;
+            margin-bottom: 15px;
+        }
+        .logo h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: #212121;
+        }
+        .logo h1 span { color: var(--primary-red); }
+        .logo p { color: #757575; font-size: 0.9rem; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #212121;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #E0E0E0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-yellow);
+        }
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary-red);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .login-btn:hover { background: #B71C1C; }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #757575;
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--primary-red); }
+        .error {
+            background: #ffebee;
+            color: var(--primary-red);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .user-types {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .user-type {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .user-type.selected {
+            border-color: var(--primary-yellow);
+            background: rgba(255, 193, 7, 0.1);
+        }
+        .user-type i { font-size: 1.5rem; margin-bottom: 5px; display: block; }
+        .user-type span { font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <div class="logo-icon"><i class="fas fa-utensils"></i></div>
+            <h1>Payal <span>Biryani</span></h1>
+            <p>Login to your account</p>
+        </div>
+        <div class="error" id="error"></div>
+        <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" required placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" required placeholder="Enter password">
+            </div>
+            <button type="submit" class="login-btn">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+        </form>
+        <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Website</a>
+    </div>
+    <script>
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const error = document.getElementById('error');
+            
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            
+            const data = await res.json();
+            if (data.success) {
+                if (data.user.role === 'owner') {
+                    window.location.href = '/owner';
+                } else if (data.user.role === 'agent') {
+                    window.location.href = '/agent';
+                } else {
+                    window.location.href = '/';
+                }
+            } else {
+                error.textContent = data.message;
+                error.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
